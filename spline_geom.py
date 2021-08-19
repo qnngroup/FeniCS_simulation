@@ -1,4 +1,4 @@
-from scipy import interpolate
+import scipy.interpolate as spint
 import numpy as np
 import matplotlib.pyplot as plt
 from Geometry_emitter import Geometry_emitter
@@ -41,18 +41,18 @@ x = geom_object.emitter_points[:, 0]
 y = geom_object.emitter_points[:, 1]
 x[25]+=1
 y[25]-=5
-tck, u = interpolate.splprep([x_points, y_points], s=0)
-tck2, u2 = interpolate.splprep([x, y], s=0)
+tck, u = spint.splprep([x_points, y_points], s=0)
+tck2, u2 = spint.splprep([x, y], s=0)
 unew = np.arange(0, 1.005, 0.005)
-out = interpolate.splev(unew, tck)
-out2 = interpolate.splev(unew, tck2)
+out = spint.splev(unew, tck)
+out2 = spint.splev(unew, tck2)
 plt.figure()
 plt.plot(x_points, y_points, 'x', out[0], out[1], out2[0], out2[1]) #x_points, y_points, 'b'
 plt.legend(['Points', 'Cubic Spline1', 'Cubic spline2', 'Linear'])
 plt.title('Spline of parametrically-defined curve')
 plt.show()
 
-mitter_coords = [Point(out2[0][i], out2[1][i]) for i in range(len(out2[0]))]
+emitter_coords = [Point(out2[0][i], out2[1][i]) for i in range(len(out2[0]))]
 minx = -x_gap/2-h-l-10
 maxx = x_gap 
 miny = -w/2-10
@@ -67,7 +67,8 @@ test_fxn = TestFunction(function_space )
 tol = 1e-2
 
 def out_boundary(x, on_boundary):
-    return on_boundary and (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol) 
+    #return on_boundary and (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol) 
+    return abs(x[0] - maxx) <= tol 
 
 def on_emitter(x, on_boundary):
     return on_boundary and intersect_surface(np.transpose(out2), x, tol)
@@ -75,20 +76,17 @@ def on_emitter(x, on_boundary):
 meshfile = File('poisson/mesh.pvd')
 meshfile << mesh
 
-u = TrialFunction(V)
-v = TestFunction(V)
+a = inner(grad(trial_fxn), grad(test_fxn))*dx
+L = Constant(0.0)*test_fxn*dx
 
-a = inner(grad(u), grad(v))*dx
-L = Constant(0.0)*v*dx
-
-out = DirichletBC(V, Constant(0), out_boundary)
-em = DirichletBC(V, Constant(10), bemitter)
+out = DirichletBC(function_space, Constant(0), out_boundary)
+em = DirichletBC(function_space, Constant(10), on_emitter)
 
 bcs = [out, em]
 
 A, b = assemble_system(a, L, bcs)
 solver = KrylovSolver('cg', 'ilu')
-u = Function(V)
+u = Function(function_space)
 U = u.vector()
 solver.solve(A, U, b)
 f = File("poisson/solution.pvd")
@@ -97,3 +95,17 @@ plt.figure()
 plot(u)
 plt.savefig("poisson/solution.png")
 plt.close()
+
+V_g = VectorFunctionSpace(mesh, 'CG', 1)
+v = TestFunction(V_g)
+w = TrialFunction(V_g)
+a = inner(w, v)*dx
+L = inner(grad(u), v)*dx
+grad_u = Function(V_g)
+solve(a == L, grad_u)
+plt.figure()
+plot(grad_u)
+plt.savefig("poisson/grad.png")
+plt.close()
+f2 = File("poisson/grad.pvd")
+f2 << grad_u
