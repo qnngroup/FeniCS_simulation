@@ -39,8 +39,12 @@ y_points = [ 0, w/2, w/2, -w/2, -w/2, 0]
 geom_object = Geometry_emitter(emitter, round_corner=True)
 x = geom_object.emitter_points[:, 0]
 y = geom_object.emitter_points[:, 1]
-x[25]+=1
-y[25]-=5
+x[3]+=2
+y[3]+=2
+x[4]+=7
+y[4]+=5
+x[5]+=2
+y[5]+=2
 tck, u = spint.splprep([x_points, y_points], s=0)
 tck2, u2 = spint.splprep([x, y], s=0)
 unew = np.arange(0, 1.005, 0.005)
@@ -93,7 +97,7 @@ f = File("poisson/solution.pvd")
 f << u
 plt.figure()
 plot(u)
-plt.savefig("poisson/solution.png")
+plt.savefig("poisson/solution2.png")
 plt.close()
 
 V_g = VectorFunctionSpace(mesh, 'CG', 1)
@@ -105,7 +109,7 @@ grad_u = Function(V_g)
 solve(a == L, grad_u)
 plt.figure()
 plot(grad_u)
-plt.savefig("poisson/grad.png")
-plt.close()
+plt.show()
+plt.savefig("poisson/grad2.png")
 f2 = File("poisson/grad.pvd")
 f2 << grad_u
