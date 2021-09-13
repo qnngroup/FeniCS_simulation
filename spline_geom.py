@@ -95,10 +95,6 @@ U = u.vector()
 solver.solve(A, U, b)
 f = File("poisson/solution.pvd")
 f << u
-plt.figure()
-plot(u)
-plt.savefig("poisson/solution2.png")
-plt.close()
 
 V_g = VectorFunctionSpace(mesh, 'CG', 1)
 v = TestFunction(V_g)
@@ -108,8 +104,39 @@ L = inner(grad(u), v)*dx
 grad_u = Function(V_g)
 solve(a == L, grad_u)
 plt.figure()
-plot(grad_u)
+plot(u)
+#plot(grad(u))
+x_coord = [-104, -45, -32, -22, -18, -11, -22, -35, -48, 0, 10, -25, 3, -2]
+y_coord = [54, 43, 30, 28, 10, 0, -15, -27, -40, 0, 0, 22, 38, -44]
+U1 = []
+V1 = []
+U2 = []
+V2 = []
+for i in range(len(x_coord)):
+    grad_at_x = grad_u(Point(x_coord[i], y_coord[i]))
+    U1.append(grad_at_x[0])
+    V1.append(grad_at_x[1])
+    U2.append(x_coord[i]+ grad_at_x[0])
+    V2.append(y_coord[i] + grad_at_x[1])
+plt.quiver(x_coord, y_coord, U1, V1)
 plt.show()
-plt.savefig("poisson/grad2.png")
+plt.savefig("poisson/potential_and_field1.png")
+plt.close()
+
+plt.figure()
+plot(u)
+plt.quiver(x_coord, y_coord, U2, V2)
+plt.show()
+plt.savefig("poisson/potential_and_field2.png")
+plt.close()
+# plot(grad_u)
+# plt.show()
+# plt.savefig("poisson/grad2.png")
+print("potential at 0,0:", u(Point(0,0)))
+print("E-field at 0,0:", grad_u(Point(0,0)))
+print("E-field at -3,0:", grad_u(Point(-3,0)))
+print("E-field at -10,0:", grad_u(Point(-10,0)))
+print("E-field at -34,-27:", grad_u(Point(-34,-27)))
+
 f2 = File("poisson/grad.pvd")
-f2 << grad_u
+f2 << grad(u)
