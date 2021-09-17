@@ -22,6 +22,26 @@ def intersect_surface(outline_points, point_star, tol):
                 is_on = True
     return is_on
     
+def find_ppoints(x, y):
+    """ finds better points to calculate fields at """
+    x_new = []
+    y_new = []
+    for i in range(len(x)-1):
+        if (y[i+1] - y[i])**2 > 0.1 and (x[i+1] - x[i])**2 > 0.1:
+            a_inv_sqr = (x[i+1] - x[i])**2/(y[i+1] - y[i])**2 +1 
+            a = (x[i]-x[i+1])/abs(x[i+1]-x[i])* 1/np.sqrt(a_inv_sqr)
+            b = (y[i]-y[i+1])/abs(y[i+1]-y[i])* np.sqrt(1 - a**2)
+            x_new.append(x[i] + a)
+            y_new.append(y[i] + b)
+        elif (x[i+1] - x[i])**2 > 0.1:
+            b = -(x[i+1] -x[i])/abs(x[i+1] -x[i])
+            x_new.append(x[i])
+            y_new.append(y[i] + b)
+        else:
+            a = (y[i+1] - y[i])/abs(y[i+1]-y[i])
+            x_new.append(x[i]+ a)
+            y_new.append(y[i])
+    return x_new, y_new
 
 x_gap = 20                 # gap between emitter and collector in the x direction 
 y_gap = 50                # gap between 2 gates in the y direction
@@ -37,24 +57,24 @@ x_points = [-x_gap/2, -x_gap/2-h, -x_gap/2-h-l, -x_gap/2-h-l, -x_gap/2-h, -x_gap
 y_points = [ 0, w/2, w/2, -w/2, -w/2, 0]
 
 geom_object = Geometry_emitter(emitter, round_corner=True)
-x = geom_object.emitter_points[:, 0]
-y = geom_object.emitter_points[:, 1]
-x[3]+=2
-y[3]+=2
-x[4]+=7
-y[4]+=5
-x[5]+=2
-y[5]+=2
+x_coords = geom_object.emitter_points[:, 0]
+y_coords = geom_object.emitter_points[:, 1]
+x_coords[3]+=2
+y_coords[3]+=2
+x_coords[4]+=7
+y_coords[4]+=5
+x_coords[5]+=2
+y_coords[5]+=2
 tck, u = spint.splprep([x_points, y_points], s=0)
-tck2, u2 = spint.splprep([x, y], s=0)
+tck2, u2 = spint.splprep([x_coords, y_coords], s=0)
 unew = np.arange(0, 1.005, 0.005)
 out = spint.splev(unew, tck)
 out2 = spint.splev(unew, tck2)
-plt.figure()
-plt.plot(x_points, y_points, 'x', out[0], out[1], out2[0], out2[1]) #x_points, y_points, 'b'
-plt.legend(['Points', 'Cubic Spline1', 'Cubic spline2', 'Linear'])
-plt.title('Spline of parametrically-defined curve')
-plt.show()
+#plt.figure()
+#plt.plot(x_points, y_points, 'x', out[0], out[1], out2[0], out2[1]) #x_points, y_points, 'b'
+#plt.legend(['Points', 'Cubic Spline1', 'Cubic spline2', 'Linear'])
+#plt.title('Spline of parametrically-defined curve')
+#plt.show()
 
 emitter_coords = [Point(out2[0][i], out2[1][i]) for i in range(len(out2[0]))]
 minx = -x_gap/2-h-l-10
@@ -106,29 +126,24 @@ solve(a == L, grad_u)
 plt.figure()
 plot(u)
 #plot(grad(u))
-x_coord = [-104, -45, -32, -22, -18, -11, -22, -35, -48, 0, 10, -25, 3, -2]
-y_coord = [54, 43, 30, 28, 10, 0, -15, -27, -40, 0, 0, 22, 38, -44]
 U1 = []
 V1 = []
-U2 = []
-V2 = []
-for i in range(len(x_coord)):
-    grad_at_x = grad_u(Point(x_coord[i], y_coord[i]))
-    U1.append(grad_at_x[0])
-    V1.append(grad_at_x[1])
-    U2.append(x_coord[i]+ grad_at_x[0])
-    V2.append(y_coord[i] + grad_at_x[1])
-plt.quiver(x_coord, y_coord, U1, V1)
+magnitude = []
+x_coords = out2[0]
+y_coords = out2[1]
+x,y = find_ppoints(x_coords, y_coords)
+# for i in range(len(x_coords)):
+#     grad_at_x = grad_u(Point(x[i], y[i]))
+#     U1.append(grad_at_x[0])
+#     V1.append(grad_at_x[1])
+#     magnitude.append(np.sqrt((grad_at_x[0])**2 + (grad_at_x[1])**2))
+# plt.quiver(x, y, U1, V1)
+# print(magnitude)
+plt.scatter(x,y)
 plt.show()
-plt.savefig("poisson/potential_and_field1.png")
+plt.savefig("poisson/potential_and_field.png")
 plt.close()
 
-plt.figure()
-plot(u)
-plt.quiver(x_coord, y_coord, U2, V2)
-plt.show()
-plt.savefig("poisson/potential_and_field2.png")
-plt.close()
 # plot(grad_u)
 # plt.show()
 # plt.savefig("poisson/grad2.png")
