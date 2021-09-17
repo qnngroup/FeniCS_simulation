@@ -27,20 +27,10 @@ def find_ppoints(x, y):
     x_new = []
     y_new = []
     for i in range(len(x)-1):
-        if (y[i+1] - y[i])**2 > 0.1 and (x[i+1] - x[i])**2 > 0.1:
-            a_inv_sqr = (x[i+1] - x[i])**2/(y[i+1] - y[i])**2 +1 
-            a = (x[i]-x[i+1])/abs(x[i+1]-x[i])* 1/np.sqrt(a_inv_sqr)
-            b = (y[i]-y[i+1])/abs(y[i+1]-y[i])* np.sqrt(1 - a**2)
-            x_new.append(x[i] + a)
-            y_new.append(y[i] + b)
-        elif (x[i+1] - x[i])**2 > 0.1:
-            b = -(x[i+1] -x[i])/abs(x[i+1] -x[i])
-            x_new.append(x[i])
-            y_new.append(y[i] + b)
-        else:
-            a = (y[i+1] - y[i])/abs(y[i+1]-y[i])
-            x_new.append(x[i]+ a)
-            y_new.append(y[i])
+        x_vec = x[i+1] - x[i]
+        y_vec = y[i+1] - y[i]
+        x_new.append( x[i] + y[i+1] - y[i])
+        y_new.append(y[i] -x[i+1] + x[i])
     return x_new, y_new
 
 x_gap = 20                 # gap between emitter and collector in the x direction 
@@ -132,14 +122,14 @@ magnitude = []
 x_coords = out2[0]
 y_coords = out2[1]
 x,y = find_ppoints(x_coords, y_coords)
-# for i in range(len(x_coords)):
-#     grad_at_x = grad_u(Point(x[i], y[i]))
-#     U1.append(grad_at_x[0])
-#     V1.append(grad_at_x[1])
-#     magnitude.append(np.sqrt((grad_at_x[0])**2 + (grad_at_x[1])**2))
-# plt.quiver(x, y, U1, V1)
-# print(magnitude)
-plt.scatter(x,y)
+for i in range(len(x)):
+    grad_at_x = grad_u(Point(x[i], y[i]))
+    U1.append(-grad_at_x[0])
+    V1.append(-grad_at_x[1])
+    magnitude.append(np.sqrt((grad_at_x[0])**2 + (grad_at_x[1])**2))
+plt.quiver(x, y, U1, V1)
+print(magnitude)
+#plt.scatter(x,y)
 plt.show()
 plt.savefig("poisson/potential_and_field.png")
 plt.close()
