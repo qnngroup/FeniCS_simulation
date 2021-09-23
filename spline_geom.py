@@ -33,6 +33,13 @@ def find_ppoints(x, y):
         y_new.append(y[i] -x[i+1] + x[i])
     return x_new, y_new
 
+def fowler_nordheim_emission(E_strength, area, phi):
+    afn = 1.5414 #micro eV v^-2
+    bfn = 6.8309 # eV^(-3/2)V/nm
+    nu = 1
+    J = afn*np.power(E_strength, 2)/phi*np.exp(-nu*bfn*np.power(phi, 3/2)/E_strength)
+    return J*area
+
 x_gap = 20                 # gap between emitter and collector in the x direction 
 y_gap = 50                # gap between 2 gates in the y direction
 w = 100                    # width of emitter and collector
@@ -113,12 +120,14 @@ a = inner(w, v)*dx
 L = inner(grad(u), v)*dx
 grad_u = Function(V_g)
 solve(a == L, grad_u)
+
 plt.figure()
 plot(u)
 #plot(grad(u))
 U1 = []
 V1 = []
 magnitude = []
+area = []
 x_coords = out2[0]
 y_coords = out2[1]
 x,y = find_ppoints(x_coords, y_coords)
@@ -127,9 +136,20 @@ for i in range(len(x)):
     U1.append(-grad_at_x[0])
     V1.append(-grad_at_x[1])
     magnitude.append(np.sqrt((grad_at_x[0])**2 + (grad_at_x[1])**2))
+    if i<len(x) - 1:
+        seg1 = np.sqrt((x[i] - x[i-1])**2 + (y[i] -y[i-1])**2)
+        seg2 =  np.sqrt((x[i+1] - x[i])**2 + (y[i+1] -y[i])**2)
+        area.append((seg1+seg2)/2)
+    else:
+        seg1 = np.sqrt((x[i] - x[i-1])**2 + (y[i] -y[i-1])**2)
+        seg2 =  np.sqrt((x[0] - x[i])**2 + (y[0] -y[i])**2)
+        area.append((seg1+seg2)/2)
+
 plt.quiver(x, y, U1, V1)
-print(magnitude)
 #plt.scatter(x,y)
+total_current = np.sum(fowler_nordheim_emission(magnitude, area, 4.5))
+print(total_current)
+plt.text(-120, 5, 'Total current:\n {} A'.format(total_current), fontsize=12)
 plt.show()
 plt.savefig("poisson/potential_and_field.png")
 plt.close()
