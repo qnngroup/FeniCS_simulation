@@ -106,6 +106,8 @@ em = DirichletBC(function_space, Constant(15), on_emitter)
 bcs = [out, em]
 
 A, b = assemble_system(a, L, bcs)
+print(A.array().shape) 
+print(b.get_local().shape)
 solver = KrylovSolver('cg', 'ilu')
 u = Function(function_space)
 U = u.vector()
@@ -113,6 +115,7 @@ solver.solve(A, U, b)
 f = File("poisson/solution.pvd")
 f << u
 
+print("Figure out what U is", abs(A.array()*U - b.get_local()))
 V_g = VectorFunctionSpace(mesh, 'CG', 1)
 v = TestFunction(V_g)
 w = TrialFunction(V_g)
