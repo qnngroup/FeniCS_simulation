@@ -22,15 +22,16 @@ def intersect_surface(outline_points, point_star, tol):
                 is_on = True
     return is_on
     
-def find_ppoints(x, y):
+def get_per_points(x, y, epsilon):
     """ finds better points to calculate fields at """
     x_new = []
     y_new = []
     for i in range(len(x)-1):
         x_vec = x[i+1] - x[i]
         y_vec = y[i+1] - y[i]
-        x_new.append( x[i] + y[i+1] - y[i])
-        y_new.append(y[i] -x[i+1] + x[i])
+        norm_factor = epsilon/np.sqrt(x_vec**2 + y_vec**2) 
+        x_new.append( x[i] + norm_factor*(y[i+1] - y[i]))
+        y_new.append(y[i] - norm_factor*(x[i+1] + x[i]))
     return x_new, y_new
 
 def fowler_nordheim_emission(E_strength, area, phi):
@@ -62,16 +63,9 @@ x_coords[4]+=7
 y_coords[4]+=5
 x_coords[5]+=2
 y_coords[5]+=2
-tck, u = spint.splprep([x_points, y_points], s=0)
 tck2, u2 = spint.splprep([x_coords, y_coords], s=0)
 unew = np.arange(0, 1.005, 0.005)
-out = spint.splev(unew, tck)
 out2 = spint.splev(unew, tck2)
-#plt.figure()
-#plt.plot(x_points, y_points, 'x', out[0], out[1], out2[0], out2[1]) #x_points, y_points, 'b'
-#plt.legend(['Points', 'Cubic Spline1', 'Cubic spline2', 'Linear'])
-#plt.title('Spline of parametrically-defined curve')
-#plt.show()
 
 emitter_coords = [Point(out2[0][i], out2[1][i]) for i in range(len(out2[0]))]
 minx = -x_gap/2-h-l-10
@@ -81,6 +75,7 @@ maxy = w/2+10
 emitter = Polygon(emitter_coords)
 domain = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter
 mesh = generate_mesh(domain, 20)
+print("Number of mesh vertices: ", mesh.num_vertices())
 
 function_space =  FunctionSpace(mesh, 'CG', 1)
 trial_fxn = TrialFunction(function_space )
@@ -110,80 +105,49 @@ solver = KrylovSolver('cg', 'ilu')
 u = Function(function_space)
 U = u.vector()
 solver.solve(A, U, b)
-f = File("poisson/solution.pvd")
-f << u
+
+# get del\delp 
+epsilon = 0.001
+x_pert, y_pert = get_per_points(x_coords, y_coords, epsilon)
+partialg_p = np.zeros((len(b), len(x_pert)))
+for j in range(len(x_pert)):
+    x = x_coords
+    x[j] = x_pert[j]
+    y = y_coords
+    y[j] = y_pert[j]
+    tck, u = spint.splprep([x, y], s=0)
+    unew = np.arange(0, 1.005, 0.005)
+    out_pert = spint.splev(unew, tck)
+    emitter_coords_pert = [Point(out_pert[0][i], out_pert[1][i]) for i in range(len(out_pert[0]))]
+    emitter_pert = Polygon(emitter_coords_pert)
+    domain_pert = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter_pert
+    mesh_pert = generate_mesh(domain_pert, 25)
+    plt.figure()
+    plt.plot(out2[0], out2[1], out_pert[0], out_pert[1]) #x_points, y_points, 'b'
+    plt.show()
+    print("Number of pert mesh vertices: ", mesh_pert.num_vertices())
+    function_space_pert =  FunctionSpace(mesh_pert, 'CG', 1)
+    trial_fxn_pert = TrialFunction(function_space_pert)
+    test_fxn_pert = TestFunction(function_space_pert)
+
+    def on_emitter_pert(x, on_boundary):
+        return on_boundary and intersect_surface(np.transpose(out_pert), x, tol)
+
+    a_pert = inner(grad(trial_fxn_pert), grad(test_fxn_pert))*dx
+    L_pert = Constant(0.0)*test_fxn_pert*dx
+
+    out = DirichletBC(function_space_pert, Constant(0), out_boundary)
+    em_pert = DirichletBC(function_space_pert, Constant(15), on_emitter_pert)
+
+    bcs_pert = [out, em_pert]
+    A_pert, b_pert = assemble_system(a_pert, L_pert, bcs_pert)
+    partialg_p[:,j] = np.matmul((A_pert.array() - A.array())/epsilon, U.get_local()) - (b_pert.get_local() - b.get_local())/epsilon
+
 
 #print("Figure out what U is", abs(A.array()*U - b.get_local()))
 print("shape of u:", U.get_local().shape)
 print("shape of b:", b.get_local().shape)
 print("shape of A:", A.array().shape)
 print("shape of Au:", np.matmul(A.array(), U.get_local()).shape)
-plt.figure()
-plt.hist(np.matmul(A.array(), U.get_local()) - b.get_local(), 20)
-plt.show()
-#print("Au -b :", np.matmul(A.array(), U.get_local()) - b.get_local())
-V_g = VectorFunctionSpace(mesh, 'CG', 1)
-v = TestFunction(V_g)
-w = TrialFunction(V_g)
-a = inner(w, v)*dx
-L = inner(grad(u), v)*dx
-grad_u = Function(V_g)
-solve(a == L, grad_u)
-
-plt.figure()
-plot(u)
-#plot(grad(u))
-U1 = []
-V1 = []
-magnitude = []
-area = []
-x_coords = out2[0]
-y_coords = out2[1]
-x,y = find_ppoints(x_coords, y_coords)
-for i in range(len(x)):
-    grad_at_x = grad_u(Point(x[i], y[i]))
-    U1.append(-grad_at_x[0])
-    V1.append(-grad_at_x[1])
-    magnitude.append(np.sqrt((grad_at_x[0])**2 + (grad_at_x[1])**2)*1e9)
-    if i<len(x) - 1:
-        seg1 = np.sqrt((x[i] - x[i-1])**2 + (y[i] -y[i-1])**2)
-        seg2 =  np.sqrt((x[i+1] - x[i])**2 + (y[i+1] -y[i])**2)
-        area.append(1e-9*(seg1+seg2)/2)
-    else:
-        seg1 = np.sqrt((x[i] - x[i-1])**2 + (y[i] -y[i-1])**2)
-        seg2 =  np.sqrt((x[0] - x[i])**2 + (y[0] -y[i])**2)
-        area.append(1e-9*(seg1+seg2)/2)
-
-plt.quiver(x, y, U1, V1)
-#plt.scatter(x,y)
-total_current = np.sum(fowler_nordheim_emission(magnitude, area, 5.3))*40e-9 * 1e6 # get current as micro amps
-print(total_current)
-plt.text(-120, 5, 'Total current:\n {} \mu A'.format(total_current), fontsize=12)
-plt.show()
-plt.savefig("poisson/potential_and_field.png")
-plt.close()
-
-# plot(grad_u)
-# plt.show()
-# plt.savefig("poisson/grad2.png")
-print("potential at 0,0:", u(Point(0,0)))
-print("E-field at 0,0:", grad_u(Point(0,0)))
-print("E-field at -3,0:", grad_u(Point(-3,0)))
-print("E-field at -10,0:", grad_u(Point(-10,0)))
-print("E-field at -34,-27:", grad_u(Point(-34,-27)))
-
-f2 = File("poisson/grad.pvd")
-f2 << grad_u
-
-
-x = np.array(find_ppoints(x_coords, y_coords)).T
-print(x.shape)
-val = np.zeros(x.shape)
-coord_dof = np.ones(x.shape)
-orient=1
-dolfin.cpp.fem.FiniteElement.evaluate_basis_all(val, x, coord_dof, orient)
-print(val)
-#     dolfin.cpp.fem.FiniteElement.evaluate_basis(2,val, g, coord, orient)
-#TypeError: evaluate_basis(): incompatible function arguments. The following argument types are supported:
-#    1. (self: dolfin.cpp.fem.FiniteElement, arg0: int, arg1: numpy.ndarray[numpy.float64], arg2: numpy.ndarray[numpy.float64], arg3: int) -> numpy.ndarray[numpy.float64]
+print("shape of partialg_p:", partialg_p.shape)
 
