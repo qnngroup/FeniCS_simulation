@@ -60,7 +60,8 @@ y_coords = geom_object.emitter_points[:, 1]
 tck2, u2 = spint.splprep([x_coords, y_coords], s=0)
 unew = np.arange(0, 1.005, 0.005)
 out2 = spint.splev(unew, tck2)
-
+plt.plot(out2[0], out2[1], '.-')
+plt.show()
 emitter_coords = [Point(out2[0][i], out2[1][i]) for i in range(len(out2[0]))]
 minx = -x_gap/2-h-l-10
 maxx = x_gap 
@@ -68,7 +69,7 @@ miny = -w/2-10
 maxy = w/2+10
 emitter = Polygon(emitter_coords)
 domain = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter
-mesh = generate_mesh(domain, 20)
+mesh = generate_mesh(domain, 15)
 print("Number of mesh vertices: ", mesh.num_vertices())
 
 function_space =  FunctionSpace(mesh, 'CG', 1)
@@ -101,24 +102,35 @@ U = u.vector()
 solver.solve(A, U, b)
 
 # get del\delp 
-epsilon = 0.001
+epsilon = 0.1
 x_pert, y_pert = get_per_points(x_coords, y_coords, epsilon)
 partialg_p = np.zeros((len(b), len(x_pert)))
-for j in range(len(x_pert)):
+#for j in range(len(x_pert)):
+for j in [0, 5, 20]:
     x = x_coords
     x[j] = x_pert[j]
     y = y_coords
     y[j] = y_pert[j]
     tck, u = spint.splprep([x, y], s=0)
-    unew = np.arange(0, 1.005, 0.005)
+    del_h = 1/294
+    unew = np.arange(0, 1+del_h, del_h)
     out_pert = spint.splev(unew, tck)
-    emitter_coords_pert = [Point(out_pert[0][i], out_pert[1][i]) for i in range(len(out_pert[0]))]
-    emitter_pert = Polygon(emitter_coords_pert)
-    domain_pert = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter_pert
-    mesh_pert = generate_mesh(domain_pert, 20)
+    emitter_x = out_pert[0]
+    emitter_y = out_pert[1]
     bmesh = BoundaryMesh(mesh, "exterior", True)
-    bmesh_pert = BoundaryMesh(mesh_pert, "exterior", True)
-    print("Length comparison. \nOld boundary: {}\nNew bounary: {}".format(len(bmesh), len(bmesh_pert)))
+    x_new = []
+    y_new = []
+    for x in bmesh.coordinates():
+        if not (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol):
+            x_new.append(x[0])
+            y_new.append(x[1])
+    plt.close()
+    plt.plot(x_new, y_new, '.-', emitter_x, emitter_y)
+    plot(mesh)
+    #plt.plot(bmesh.coordinates()[96:,0],bmesh.coordinates()[96:,1], '-.', bmesh_pert.coordinates()[96:,0],bmesh_pert.coordinates()[96:,1], '.r')
+    #plt.plot()
+    plt.show()
+    print("Length of parimeter: {}. Len of skipped: {}".format(len(x_new), len(bmesh.coordinates()) - len(x_new)))
 
     # plt.figure()
     # plt.plot(out2[0], out2[1], out_pert[0], out_pert[1]) #x_points, y_points, 'b'
