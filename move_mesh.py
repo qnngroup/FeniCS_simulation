@@ -39,6 +39,8 @@ left_edge.mark(mf, 3)
 right_edge.mark(mf, 4)
 plot(mesh)
 plt.show()
+plt.savefig("mesh1.png")
+plt.close()
 # Define facet function over the new mesh
 
 
@@ -70,3 +72,4 @@ for i in range(10):
   ALE.move(mesh, bmesh)
 plot(mesh)
 plt.show()
+plt.savefig("mesh2.png")
