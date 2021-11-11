@@ -60,8 +60,9 @@ y_coords = geom_object.emitter_points[:, 1]
 tck2, u2 = spint.splprep([x_coords, y_coords], s=0)
 unew = np.arange(0, 1.005, 0.005)
 out2 = spint.splev(unew, tck2)
-plt.plot(out2[0], out2[1], '.-')
-plt.show()
+#plt.plot(out2[0], out2[1], '.-', out2[0][0], out2[1][0], '*')
+out2[0][-1] = out2[0][0]
+out2[1][-1] = out2[1][0]
 emitter_coords = [Point(out2[0][i], out2[1][i]) for i in range(len(out2[0]))]
 minx = -x_gap/2-h-l-10
 maxx = x_gap 
@@ -69,7 +70,7 @@ miny = -w/2-10
 maxy = w/2+10
 emitter = Polygon(emitter_coords)
 domain = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter
-mesh = generate_mesh(domain, 15)
+mesh = generate_mesh(domain, 20)
 print("Number of mesh vertices: ", mesh.num_vertices())
 
 function_space =  FunctionSpace(mesh, 'CG', 1)
@@ -112,26 +113,58 @@ for j in [0, 5, 20]:
     y = y_coords
     y[j] = y_pert[j]
     tck, u = spint.splprep([x, y], s=0)
-    del_h = 1/294
-    unew = np.arange(0, 1+del_h, del_h)
+    #del_h = 1/294
+    #unew = np.arange(0, 1+del_h, del_h)
+    unew = np.arange(0, 1.005, 0.005)
     out_pert = spint.splev(unew, tck)
     emitter_x = out_pert[0]
     emitter_y = out_pert[1]
+    emitter_x[-1] = emitter_x[0]
+    emitter_y[-1] = emitter_y[0]
+    emitter_coords_pert = [Point(emitter_x[i], emitter_y[i]) for i in range(len(emitter_x))]
+    emitter_pert = Polygon(emitter_coords_pert)
+    domain_pert = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter_pert
+    mesh_pert = generate_mesh(domain_pert, 20)
     bmesh = BoundaryMesh(mesh, "exterior", True)
+    bmesh_pert = BoundaryMesh(mesh_pert, "exterior", True)
+    print("External boundary1: {} \nExternal boundary2: {}".format(len(bmesh.coordinates()),len(bmesh_pert.coordinates())))
     x_new = []
     y_new = []
+    x_new_pert = []
+    y_new_pert = []
     for x in bmesh.coordinates():
         if not (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol):
             x_new.append(x[0])
             y_new.append(x[1])
+
+    for x in bmesh_pert.coordinates():
+        if not (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol):
+            x_new_pert.append(x[0])
+            y_new_pert.append(x[1])
     plt.close()
-    plt.plot(x_new, y_new, '.-', emitter_x, emitter_y)
+    #plt.plot(x_new, y_new, '.-', x_new_pert, y_new_pert, x_new[0], y_new[0], '*',x_new[10], y_new[10], 'o', x_new_pert[2], y_new_pert[2], '.', x_new_pert[12], y_new_pert[12], "*")\
+    plt.plot(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1])
+    plt.scatter(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1], c=range(len(bmesh.coordinates()[:,1])), cmap='gray')
+    plt.plot(emitter_x[-5:-1], emitter_y[-5:-1], '*', )
     plot(mesh)
     #plt.plot(bmesh.coordinates()[96:,0],bmesh.coordinates()[96:,1], '-.', bmesh_pert.coordinates()[96:,0],bmesh_pert.coordinates()[96:,1], '.r')
     #plt.plot()
     plt.show()
     print("Length of parimeter: {}. Len of skipped: {}".format(len(x_new), len(bmesh.coordinates()) - len(x_new)))
+    print("Length of parimeter2: {}. Len of skipped: {}".format(len(x_new_pert), len(bmesh_pert.coordinates()) - len(x_new_pert)))
 
+    # order nodes 
+    # not sure concatenate is efficient enough. Might want to think twice about these operations. 
+    emitter_x_new = np.concatenate((emitter_x[[-3, -4, -2]], np.flip(emitter_x)[4:])) 
+    emitter_y_new = np.concatenate((emitter_y[[-3, -4, -2]], np.flip(emitter_y)[4:])) 
+    # move boundary of mesh 
+    bmesh.coordinates()[12:12+len(emitter_x_new),0] = emitter_x_new
+    bmesh.coordinates()[12:12+len(emitter_y_new),1] = emitter_y_new
+    ALE.move(mesh, bmesh)
+
+    plt.close()
+    plot(mesh)
+    plt.show()
     # plt.figure()
     # plt.plot(out2[0], out2[1], out_pert[0], out_pert[1]) #x_points, y_points, 'b'
     # plt.show()
