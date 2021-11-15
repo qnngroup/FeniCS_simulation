@@ -74,6 +74,7 @@ mesh = generate_mesh(domain, 20)
 print("Number of mesh vertices: ", mesh.num_vertices())
 
 function_space =  FunctionSpace(mesh, 'CG', 1)
+print("f space dim:", function_space.dim())
 trial_fxn = TrialFunction(function_space )
 test_fxn = TestFunction(function_space )
 tol = 1e-2
@@ -107,10 +108,10 @@ epsilon = 0.1
 x_pert, y_pert = get_per_points(x_coords, y_coords, epsilon)
 partialg_p = np.zeros((len(b), len(x_pert)))
 #for j in range(len(x_pert)):
-for j in [0, 5, 20]:
-    x = x_coords
+for j in range(len(x_pert)):
+    x = x_coords.copy()
     x[j] = x_pert[j]
-    y = y_coords
+    y = y_coords.copy()
     y[j] = y_pert[j]
     tck, u = spint.splprep([x, y], s=0)
     #del_h = 1/294
@@ -121,37 +122,37 @@ for j in [0, 5, 20]:
     emitter_y = out_pert[1]
     emitter_x[-1] = emitter_x[0]
     emitter_y[-1] = emitter_y[0]
-    emitter_coords_pert = [Point(emitter_x[i], emitter_y[i]) for i in range(len(emitter_x))]
-    emitter_pert = Polygon(emitter_coords_pert)
-    domain_pert = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter_pert
-    mesh_pert = generate_mesh(domain_pert, 20)
+    #emitter_coords_pert = [Point(emitter_x[i], emitter_y[i]) for i in range(len(emitter_x))]
+    #emitter_pert = Polygon(emitter_coords_pert)
+    #domain_pert = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter_pert
+    #mesh_pert = generate_mesh(domain_pert, 20)
     bmesh = BoundaryMesh(mesh, "exterior", True)
-    bmesh_pert = BoundaryMesh(mesh_pert, "exterior", True)
-    print("External boundary1: {} \nExternal boundary2: {}".format(len(bmesh.coordinates()),len(bmesh_pert.coordinates())))
-    x_new = []
-    y_new = []
-    x_new_pert = []
-    y_new_pert = []
-    for x in bmesh.coordinates():
-        if not (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol):
-            x_new.append(x[0])
-            y_new.append(x[1])
+    #bmesh_pert = BoundaryMesh(mesh_pert, "exterior", True)
+    #print("External boundary1: {} \nExternal boundary2: {}".format(len(bmesh.coordinates()),len(bmesh_pert.coordinates())))
+    # x_new = []
+    # y_new = []
+    # x_new_pert = []
+    # y_new_pert = []
+    # for x in bmesh.coordinates():
+    #     if not (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol):
+    #         x_new.append(x[0])
+    #         y_new.append(x[1])
 
-    for x in bmesh_pert.coordinates():
-        if not (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol):
-            x_new_pert.append(x[0])
-            y_new_pert.append(x[1])
-    plt.close()
+    # for x in bmesh_pert.coordinates():
+    #     if not (abs(x[0] - minx) <= tol or abs(x[0] - maxx) <= tol or abs(x[1] - miny) <= tol or abs(x[1] - maxy) <= tol):
+    #         x_new_pert.append(x[0])
+    #         y_new_pert.append(x[1])
+    # plt.close()
     #plt.plot(x_new, y_new, '.-', x_new_pert, y_new_pert, x_new[0], y_new[0], '*',x_new[10], y_new[10], 'o', x_new_pert[2], y_new_pert[2], '.', x_new_pert[12], y_new_pert[12], "*")\
-    plt.plot(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1])
-    plt.scatter(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1], c=range(len(bmesh.coordinates()[:,1])), cmap='gray')
-    plt.plot(emitter_x[-5:-1], emitter_y[-5:-1], '*', )
-    plot(mesh)
+    #plt.plot(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1])
+    #plt.scatter(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1], c=range(len(bmesh.coordinates()[:,1])), cmap='gray')
+    #plt.plot(emitter_x[-5:-1], emitter_y[-5:-1], '*', )
+    #plot(mesh)
     #plt.plot(bmesh.coordinates()[96:,0],bmesh.coordinates()[96:,1], '-.', bmesh_pert.coordinates()[96:,0],bmesh_pert.coordinates()[96:,1], '.r')
     #plt.plot()
-    plt.show()
-    print("Length of parimeter: {}. Len of skipped: {}".format(len(x_new), len(bmesh.coordinates()) - len(x_new)))
-    print("Length of parimeter2: {}. Len of skipped: {}".format(len(x_new_pert), len(bmesh_pert.coordinates()) - len(x_new_pert)))
+    #plt.show()
+    #print("Length of parimeter: {}. Len of skipped: {}".format(len(x_new), len(bmesh.coordinates()) - len(x_new)))
+    #print("Length of parimeter2: {}. Len of skipped: {}".format(len(x_new_pert), len(bmesh_pert.coordinates()) - len(x_new_pert)))
 
     # order nodes 
     # not sure concatenate is efficient enough. Might want to think twice about these operations. 
@@ -162,29 +163,29 @@ for j in [0, 5, 20]:
     bmesh.coordinates()[12:12+len(emitter_y_new),1] = emitter_y_new
     ALE.move(mesh, bmesh)
 
-    plt.close()
-    plot(mesh)
-    plt.show()
+    # plt.close()
+    # plot(mesh)
+    # plt.show()
     # plt.figure()
     # plt.plot(out2[0], out2[1], out_pert[0], out_pert[1]) #x_points, y_points, 'b'
     # plt.show()
     # print("Number of pert mesh vertices: ", mesh_pert.num_vertices())
-    # function_space_pert =  FunctionSpace(mesh_pert, 'CG', 1)
-    # trial_fxn_pert = TrialFunction(function_space_pert)
-    # test_fxn_pert = TestFunction(function_space_pert)
+    function_space_pert =  FunctionSpace(mesh, 'CG', 1)
+    trial_fxn_pert = TrialFunction(function_space_pert)
+    test_fxn_pert = TestFunction(function_space_pert)
 
-    # def on_emitter_pert(x, on_boundary):
-    #     return on_boundary and intersect_surface(np.transpose(out_pert), x, tol)
+    def on_emitter_pert(x, on_boundary):
+        return on_boundary and intersect_surface(np.transpose(out_pert), x, tol)
 
-    # a_pert = inner(grad(trial_fxn_pert), grad(test_fxn_pert))*dx
-    # L_pert = Constant(0.0)*test_fxn_pert*dx
+    a_pert = inner(grad(trial_fxn_pert), grad(test_fxn_pert))*dx
+    L_pert = Constant(0.0)*test_fxn_pert*dx
 
-    # out = DirichletBC(function_space_pert, Constant(0), out_boundary)
-    # em_pert = DirichletBC(function_space_pert, Constant(15), on_emitter_pert)
+    out = DirichletBC(function_space_pert, Constant(0), out_boundary)
+    em_pert = DirichletBC(function_space_pert, Constant(15), on_emitter_pert)
 
-    # bcs_pert = [out, em_pert]
-    # A_pert, b_pert = assemble_system(a_pert, L_pert, bcs_pert)
-    # partialg_p[:,j] = np.matmul((A_pert.array() - A.array())/epsilon, U.get_local()) - (b_pert.get_local() - b.get_local())/epsilon
+    bcs_pert = [out, em_pert]
+    A_pert, b_pert = assemble_system(a_pert, L_pert, bcs_pert)
+    partialg_p[:,j] = np.matmul((A_pert.array() - A.array())/epsilon, U.get_local()) - (b_pert.get_local() - b.get_local())/epsilon
 
 
 #print("Figure out what U is", abs(A.array()*U - b.get_local()))
@@ -193,4 +194,5 @@ print("shape of b:", b.get_local().shape)
 print("shape of A:", A.array().shape)
 print("shape of Au:", np.matmul(A.array(), U.get_local()).shape)
 print("shape of partialg_p:", partialg_p.shape)
+print("Content partialg_p:", partialg_p)
 
