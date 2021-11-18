@@ -32,8 +32,6 @@ def get_per_points(x, y, epsilon):
         norm_factor = epsilon/np.sqrt(x_vec**2 + y_vec**2) 
         x_new.append(x[i] + norm_factor*(y[i+1] - y[i]))
         y_new.append(y[i] - norm_factor*(x[i+1] - x[i]))
-        x_new.append(x[i] - norm_factor*(y[i+1] - y[i]))
-        y_new.append(y[i] + norm_factor*(x[i+1] - x[i]))
     return x_new, y_new
 
 def fowler_nordheim_emission(E_strength, area, phi):
