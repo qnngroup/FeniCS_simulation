@@ -30,8 +30,10 @@ def get_per_points(x, y, epsilon):
         x_vec = x[i+1] - x[i]
         y_vec = y[i+1] - y[i]
         norm_factor = epsilon/np.sqrt(x_vec**2 + y_vec**2) 
-        x_new.append( x[i] + norm_factor*(y[i+1] - y[i]))
-        y_new.append(y[i] - norm_factor*(x[i+1] + x[i]))
+        x_new.append(x[i] + norm_factor*(y[i+1] - y[i]))
+        y_new.append(y[i] - norm_factor*(x[i+1] - x[i]))
+        x_new.append(x[i] - norm_factor*(y[i+1] - y[i]))
+        y_new.append(y[i] + norm_factor*(x[i+1] - x[i]))
     return x_new, y_new
 
 def fowler_nordheim_emission(E_strength, area, phi):
@@ -74,7 +76,7 @@ mesh = generate_mesh(domain, 20)
 print("Number of mesh vertices: ", mesh.num_vertices())
 
 function_space =  FunctionSpace(mesh, 'CG', 1)
-print("f space dim:", function_space.dim())
+print("function space dim:", function_space.dim())
 trial_fxn = TrialFunction(function_space )
 test_fxn = TestFunction(function_space )
 tol = 1e-2
@@ -96,19 +98,20 @@ out = DirichletBC(function_space, Constant(0), out_boundary)
 em = DirichletBC(function_space, Constant(15), on_emitter)
 
 bcs = [out, em]
-
+#parameters['reorder_dofs_serial'] = False
 A, b = assemble_system(a, L, bcs)
 solver = KrylovSolver('cg', 'ilu')
 u = Function(function_space)
 U = u.vector()
+print(U.get_local())
 solver.solve(A, U, b)
 
 # get del\delp 
-epsilon = 0.1
+epsilon = 1
 x_pert, y_pert = get_per_points(x_coords, y_coords, epsilon)
 partialg_p = np.zeros((len(b), len(x_pert)))
 #for j in range(len(x_pert)):
-for j in range(len(x_pert)):
+for j in range(0, len(x_pert), 3):
     x = x_coords.copy()
     x[j] = x_pert[j]
     y = y_coords.copy()
@@ -143,14 +146,13 @@ for j in range(len(x_pert)):
     #         x_new_pert.append(x[0])
     #         y_new_pert.append(x[1])
     # plt.close()
-    #plt.plot(x_new, y_new, '.-', x_new_pert, y_new_pert, x_new[0], y_new[0], '*',x_new[10], y_new[10], 'o', x_new_pert[2], y_new_pert[2], '.', x_new_pert[12], y_new_pert[12], "*")\
-    #plt.plot(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1])
-    #plt.scatter(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1], c=range(len(bmesh.coordinates()[:,1])), cmap='gray')
-    #plt.plot(emitter_x[-5:-1], emitter_y[-5:-1], '*', )
-    #plot(mesh)
+    # plt.plot(x_new, y_new, '.-', x_new_pert, y_new_pert, x_new[0], y_new[0], '*',x_new[10], y_new[10], 'o', x_new_pert[2], y_new_pert[2], '.', x_new_pert[12], y_new_pert[12], "*")
+    plt.plot(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1])
+    plt.scatter(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1], c=range(len(bmesh.coordinates()[:,1])), cmap='gray')
+    plt.plot(emitter_x[-5:-1], emitter_y[-5:-1], '*', )
+    plot(mesh)
     #plt.plot(bmesh.coordinates()[96:,0],bmesh.coordinates()[96:,1], '-.', bmesh_pert.coordinates()[96:,0],bmesh_pert.coordinates()[96:,1], '.r')
-    #plt.plot()
-    #plt.show()
+    plt.show()
     #print("Length of parimeter: {}. Len of skipped: {}".format(len(x_new), len(bmesh.coordinates()) - len(x_new)))
     #print("Length of parimeter2: {}. Len of skipped: {}".format(len(x_new_pert), len(bmesh_pert.coordinates()) - len(x_new_pert)))
 
@@ -192,7 +194,9 @@ for j in range(len(x_pert)):
 print("shape of u:", U.get_local().shape)
 print("shape of b:", b.get_local().shape)
 print("shape of A:", A.array().shape)
+print("number of mesh nodes:", mesh.num_vertices())
+print("number of mesh cells:", mesh.num_cells())
 print("shape of Au:", np.matmul(A.array(), U.get_local()).shape)
 print("shape of partialg_p:", partialg_p.shape)
-print("Content partialg_p:", partialg_p)
+#print("Content partialg_p:", partialg_p)
 
