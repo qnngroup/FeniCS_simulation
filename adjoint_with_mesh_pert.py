@@ -87,6 +87,7 @@ def on_emitter(x, on_boundary):
     return on_boundary and intersect_surface(np.transpose(out2), x, tol)
 
 meshfile = File('poisson/mesh.pvd')
+#parameters['reorder_dofs_serial'] = False
 meshfile << mesh
 
 a = inner(grad(trial_fxn), grad(test_fxn))*dx
@@ -108,8 +109,11 @@ solver.solve(A, U, b)
 epsilon = 1
 x_pert, y_pert = get_per_points(x_coords, y_coords, epsilon)
 partialg_p = np.zeros((len(b), len(x_pert)))
-#for j in range(len(x_pert)):
-for j in range(0, len(x_pert), 3):
+array_save = np.empty((2 +2*len(x_pert), len(unew)))
+array_save[0, :] = out2[0]
+array_save[1, :] = out2[1]
+for j in range(len(x_pert)):
+#for j in range(0, len(x_pert), 3):
     x = x_coords.copy()
     x[j] = x_pert[j]
     y = y_coords.copy()
@@ -123,6 +127,8 @@ for j in range(0, len(x_pert), 3):
     emitter_y = out_pert[1]
     emitter_x[-1] = emitter_x[0]
     emitter_y[-1] = emitter_y[0]
+    array_save[2*(j+1), :] = emitter_x 
+    array_save[2*(j+1)+1, :] = emitter_y 
     #emitter_coords_pert = [Point(emitter_x[i], emitter_y[i]) for i in range(len(emitter_x))]
     #emitter_pert = Polygon(emitter_coords_pert)
     #domain_pert = Rectangle(Point(minx, miny), Point(maxx, maxy)) - emitter_pert
@@ -145,12 +151,14 @@ for j in range(0, len(x_pert), 3):
     #         y_new_pert.append(x[1])
     # plt.close()
     # plt.plot(x_new, y_new, '.-', x_new_pert, y_new_pert, x_new[0], y_new[0], '*',x_new[10], y_new[10], 'o', x_new_pert[2], y_new_pert[2], '.', x_new_pert[12], y_new_pert[12], "*")
-    plt.plot(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1])
-    plt.scatter(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1], c=range(len(bmesh.coordinates()[:,1])), cmap='gray')
-    plt.plot(emitter_x[-5:-1], emitter_y[-5:-1], '*', )
-    plot(mesh)
-    #plt.plot(bmesh.coordinates()[96:,0],bmesh.coordinates()[96:,1], '-.', bmesh_pert.coordinates()[96:,0],bmesh_pert.coordinates()[96:,1], '.r')
-    plt.show()
+    ##############################################3
+    # plt.plot(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1])
+    # plt.scatter(bmesh.coordinates()[:,0], bmesh.coordinates()[:,1], c=range(len(bmesh.coordinates()[:,1])), cmap='gray')
+    # plt.plot(emitter_x[-5:-1], emitter_y[-5:-1], '*', )
+    # plot(mesh)
+    # #plt.plot(bmesh.coordinates()[96:,0],bmesh.coordinates()[96:,1], '-.', bmesh_pert.coordinates()[96:,0],bmesh_pert.coordinates()[96:,1], '.r')
+    # plt.show()
+    #####################################################3
     #print("Length of parimeter: {}. Len of skipped: {}".format(len(x_new), len(bmesh.coordinates()) - len(x_new)))
     #print("Length of parimeter2: {}. Len of skipped: {}".format(len(x_new_pert), len(bmesh_pert.coordinates()) - len(x_new_pert)))
 
@@ -197,4 +205,4 @@ print("number of mesh cells:", mesh.num_cells())
 print("shape of Au:", np.matmul(A.array(), U.get_local()).shape)
 print("shape of partialg_p:", partialg_p.shape)
 #print("Content partialg_p:", partialg_p)
-
+np.savetxt("interpolated_arrays.csv", array_save)
