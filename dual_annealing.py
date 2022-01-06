@@ -85,9 +85,9 @@ maxy = w/2+10
 outline_points = np.concatenate((x_coords, y_coords))    
 def objective(outline_points):
     """ Objective function solves the poisson equation and calculates the gradient to find the e field strength"""
-    x_coords = outline_points[0:len(outline_points)/2]
-    y_coords = outline_points[len(outline_points)/2:len(outline_points)]
-    tck2, u2 = spint.splprep(outline_points, s=0)
+    x_coords = outline_points[0:int(len(outline_points)/2)]
+    y_coords = outline_points[int(len(outline_points)/2):len(outline_points)]
+    tck2, u2 = spint.splprep([x_coords, y_coords], s=0)
     unew = np.arange(0, 1.005, 0.005)
     out2 = spint.splev(unew, tck2)
     #plt.figure()
@@ -177,19 +177,20 @@ def objective(outline_points):
     #plt.scatter(x,y)
     total_current = np.sum(fowler_nordheim_emission(magnitude, area, 5.3))*40e-9 * 1e6 # get current as micro amps
     print("Total current:", total_current)
-    return total_current
+    plt.text(-120, 5, 'Total current:\n {} \mu A'.format(total_current), fontsize=12)
+    plt.show()
+    plt.savefig("poisson/potential_and_field.png")
+    plt.close()
+    return 1/total_current
 
-plt.text(-120, 5, 'Total current:\n {} \mu A'.format(total_current), fontsize=12)
-plt.show()
-plt.savefig("poisson/potential_and_field.png")
-plt.close()
+
 
 
 # define the bounds on the search
 bounds = []
-for x in outline_points[0:len(outline_points)/2]:
+for x in outline_points[0:int(len(outline_points)/2)]:
     bounds.append([minx+5, maxx-5])
-for y in outline_points[len(outline_points)/2:len(outline_points)]:
+for y in outline_points[int(len(outline_points)/2):len(outline_points)]:
     if y>10:
         bounds.append([5, maxy])
     elif y<-10:
