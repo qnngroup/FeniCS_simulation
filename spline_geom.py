@@ -178,11 +178,11 @@ f2 << grad_u
 
 x = np.array(find_ppoints(x_coords, y_coords)).T
 print(x.shape)
-val = np.zeros(x.shape)
-coord_dof = np.ones(x.shape)
-orient=1
-dolfin.cpp.fem.FiniteElement.evaluate_basis_all(val, x, coord_dof, orient)
-print(val)
+# val = np.zeros(x.shape)
+# coord_dof = np.ones(x.shape)
+# orient=1
+# dolfin.cpp.fem.FiniteElement.evaluate_basis_all(val, x, coord_dof, orient)
+# print(val)
 #     dolfin.cpp.fem.FiniteElement.evaluate_basis(2,val, g, coord, orient)
 #TypeError: evaluate_basis(): incompatible function arguments. The following argument types are supported:
 #    1. (self: dolfin.cpp.fem.FiniteElement, arg0: int, arg1: numpy.ndarray[numpy.float64], arg2: numpy.ndarray[numpy.float64], arg3: int) -> numpy.ndarray[numpy.float64]

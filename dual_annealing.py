@@ -90,11 +90,11 @@ def objective(outline_points):
     tck2, u2 = spint.splprep([x_coords, y_coords], s=0)
     unew = np.arange(0, 1.005, 0.005)
     out2 = spint.splev(unew, tck2)
-    #plt.figure()
-    #plt.plot(x_points, y_points, 'x', out[0], out[1], out2[0], out2[1]) #x_points, y_points, 'b'
-    #plt.legend(['Points', 'Cubic Spline1', 'Cubic spline2', 'Linear'])
-    #plt.title('Spline of parametrically-defined curve')
-    #plt.show()
+    plt.figure()
+    plt.plot(x_coords, y_coords, 'x', out2[0], out2[1]) #x_points, y_points, 'b'
+    plt.legend(['Points', 'Cubic Spline1', 'Cubic spline2', 'Linear'])
+    plt.title('Spline of parametrically-defined curve')
+    plt.show()
 
     emitter_coords = [Point(out2[0][i], out2[1][i]) for i in range(len(out2[0]))]
     emitter = Polygon(emitter_coords)
@@ -199,7 +199,7 @@ for y in outline_points[int(len(outline_points)/2):len(outline_points)]:
         bounds.append([-10, 10])
 
 # perform the dual annealing search
-result = dual_annealing(objective, bounds)
+result = dual_annealing(objective, bounds, visit=1.3, initial_temp=5000, x0=outline_points)
 # summarize the result
 print('Status : %s' % result['message'])
 print('Total Evaluations: %d' % result['nfev'])
