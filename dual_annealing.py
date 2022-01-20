@@ -70,12 +70,12 @@ y_points = [ 0, w/2, w/2, -w/2, -w/2, 0]
 geom_object = Geometry_emitter(emitter, round_corner=True)
 x_coords = geom_object.emitter_points[:, 0]
 y_coords = geom_object.emitter_points[:, 1]
-x_coords[3]+=2
-y_coords[3]+=2
-x_coords[4]+=7
-y_coords[4]+=5
-x_coords[5]+=2
-y_coords[5]+=2
+# x_coords[3]+=2
+# y_coords[3]+=2
+# x_coords[4]+=7
+# y_coords[4]+=5
+# x_coords[5]+=2
+# y_coords[5]+=2
 
 minx = -x_gap/2-h-l-10
 maxx = x_gap 
@@ -189,12 +189,12 @@ def objective(outline_points):
 # define the bounds on the search
 bounds = []
 for x in outline_points[0:int(len(outline_points)/2)]:
-    bounds.append([minx+5, maxx-5])
+    bounds.append([x-5, x+5])
 for y in outline_points[int(len(outline_points)/2):len(outline_points)]:
     if y>10:
-        bounds.append([5, maxy])
+        bounds.append([5, y+5])
     elif y<-10:
-        bounds.append([miny, -5])
+        bounds.append([y-5, -5])
     else:
         bounds.append([-10, 10])
 

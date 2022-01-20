@@ -77,7 +77,7 @@ out = DirichletBC(function_space, Constant(0), out_boundary)
 em = DirichletBC(function_space, Constant(15), on_emitter)
 
 bcs = [out, em]
-#parameters['reorder_dofs_serial'] = False
+parameters['reorder_dofs_serial'] = False
 A, b = assemble_system(a, L, bcs)
 solver = KrylovSolver('cg', 'ilu')
 u = Function(function_space)
@@ -93,6 +93,7 @@ plot(mesh)
 #plt.plot(bmesh.coordinates()[96:,0],bmesh.coordinates()[96:,1], '-.', bmesh_pert.coordinates()[96:,0],bmesh_pert.coordinates()[96:,1], '.r')
 plt.show()
 
+
 for x in bmesh.coordinates()[12:12+len(out2[0]), :]:
     cell_index = tree.compute_first_entity_collision(Point(*x))
     cell_global_dofs = function_space.dofmap().cell_dofs(cell_index)
@@ -101,7 +102,8 @@ for x in bmesh.coordinates()[12:12+len(out2[0]), :]:
     print(function_space.element().evaluate_basis_derivatives_all(1,x,cell.get_vertex_coordinates(),cell.orientation()))
     print(function_space.element().evaluate_basis_derivatives_all(1,x,cell.get_vertex_coordinates(),cell.orientation()).shape)
 
-
+print(vertex_to_dof_map(function_space), len(vertex_to_dof_map(function_space)))
+print(dof_to_vertex_map(function_space), len(dof_to_vertex_map(function_space)))
 
 
 
