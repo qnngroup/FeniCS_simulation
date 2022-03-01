@@ -1,6 +1,6 @@
 # FeniCS_simulation
 
-Author: Adina Bechhofer (2021 - 2022)
+Author: Adina Bechhofer 
 
 ### General Description 
 
